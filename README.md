@@ -1,2 +1,4 @@
-# goolbelt
-A simple Go toolbelt
+![alt](./assets/logo.png)
+--
+# Bellt - Simple Golang Tool belt
+
