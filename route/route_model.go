@@ -12,3 +12,9 @@ type Route struct {
 	Path    string
 	Handler http.HandlerFunc
 }
+
+// SubRoute is a struct to define a subRoute item.
+type SubRoute struct {
+	Route   Route
+	Methods []string
+}
