@@ -7,7 +7,7 @@ type Router struct {
 	routes []*Route
 }
 
-// Route ir a struct to define a route item.
+// Route is a struct to define a route item.
 type Route struct {
 	Path    string
 	Handler http.HandlerFunc

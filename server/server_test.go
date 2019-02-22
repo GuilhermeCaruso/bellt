@@ -6,6 +6,7 @@ import (
 	"testing"
 )
 
+// Test responsible for ensuring correct server execution
 func TestHealthCheckHandler(t *testing.T) {
 	req, err := http.NewRequest("GET", "/health", nil)
 	if err != nil {

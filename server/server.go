@@ -10,7 +10,7 @@ import (
 )
 
 /*
-InitServer - Simple server initialization
+InitServer - Simple initialization of a server to provide a Web or REST application.
 */
 func InitServer(serverInfo Server) {
 	var buf bytes.Buffer
@@ -24,7 +24,7 @@ func InitServer(serverInfo Server) {
 	log.Fatal(http.ListenAndServe(buf.String(), nil))
 }
 
-//Simple function to application health check
+//Function used in application health routing.
 func healthApplication(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(utils.HTTPStatusCode["OK"])

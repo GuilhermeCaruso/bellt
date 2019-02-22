@@ -17,7 +17,7 @@ func NewRouter() *Router {
 // Router methods
 // ----------------------------------------------------------------------------
 
-// Route method called to create a new simple route on Router.
+// Route used to define the calling method.
 func (r *Router) Route(path string, handleFunc http.HandlerFunc) *Route {
 
 	route := &Route{
@@ -33,6 +33,7 @@ func (r *Router) Route(path string, handleFunc http.HandlerFunc) *Route {
 // Route methods
 // ----------------------------------------------------------------------------
 
+//Method define request handler method
 func (r *Route) Method(method string) {
 	if checkMethod(method) {
 		http.HandleFunc(r.Path, headerBuilder(gateMethod(method, r.Handler)))
@@ -41,6 +42,7 @@ func (r *Route) Method(method string) {
 	log.Fatal()
 }
 
+// Verifies veracity of an established method.
 func checkMethod(m string) bool {
 	for _, method := range methods {
 		if m == method {
@@ -54,11 +56,13 @@ func checkMethod(m string) bool {
 // Route middlewares
 // ----------------------------------------------------------------------------
 
+// Ensures that routing is done using valid methods
 func gateMethod(method string, next http.HandlerFunc) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == method {
 			next.ServeHTTP(w, r)
+			return
 		}
 
 		w.WriteHeader(utils.HTTPStatusCode["NOT_FOUND"])
@@ -67,6 +71,7 @@ func gateMethod(method string, next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
+//  Defines JSON header for standard REST service routes.
 func headerBuilder(next http.HandlerFunc) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
