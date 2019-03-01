@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"regexp"
 
 	"github.com/GuilhermeCaruso/bellt/utils"
 )
@@ -13,6 +14,10 @@ import (
 func NewRouter() *Router {
 	router := Router{}
 	return &router
+}
+
+func RedirectBuiltRoute(w http.ResponseWriter, r *http.Request) {
+
 }
 
 // ----------------------------------------------------------------------------
@@ -44,9 +49,31 @@ func (r *Router) SubRoute(path string, handleFunc http.HandlerFunc, methods ...s
 	return subRoute
 }
 
+// BuiltRoute used to define the built route method
+func (r *Router) BuiltRoute(path string, handleFunc http.HandlerFunc, methods ...string) *BuiltRoute {
+
+	rgx := regexp.MustCompile(`(?m){(\w*)}`)
+	values := rgx.FindAllStringSubmatch(path, -1)
+
+	valuesList := make(map[string]string)
+
+	for _, value := range values {
+		valuesList[value[1]] = ""
+	}
+
+	builtRoute := &BuiltRoute{
+		TempPath: path,
+		Handler:  handleFunc,
+		Var:      valuesList,
+	}
+
+	r.built = append(r.built, builtRoute)
+
+	return builtRoute
+}
+
 // Group used to create and define a group of sub-routes
 func (r *Router) Group(mainPath string, sr ...*SubRoute) {
-
 	for _, route := range sr {
 		var buf bytes.Buffer
 		buf.WriteString(mainPath)
