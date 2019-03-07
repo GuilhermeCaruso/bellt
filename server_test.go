@@ -1,4 +1,4 @@
-package server
+package bellt
 
 import (
 	"net/http"
