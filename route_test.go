@@ -1,7 +1,9 @@
 package bellt
 
 import (
+	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 )
 
@@ -45,4 +47,27 @@ func TesteRouteCreation(t *testing.T) {
 		t.Errorf("Invalid route number .\n\tgot:%+v\n\twant:%+v", len(router.routes), len(simpleRoutes))
 	}
 
+}
+
+func TestRedirectBuiltRoute(t *testing.T) {
+	req, err := http.NewRequest("GET", "/usuario/123/novo", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rr := httptest.NewRecorder()
+	handler := http.Handler(verifyBuiltRoutes(redirectBuiltRoute))
+
+	handler.ServeHTTP(rr, req)
+
+	fmt.Println(rr, req)
+	// if status := rr.Code; status != http.StatusOK {
+	// 	t.Errorf("handler returned wrong status code: got %v want %v",
+	// 		status, http.StatusOK)
+	// }
+
+	// expected := `{"alive": "Server running"}`
+	// if rr.Body.String() != expected {
+	// 	t.Errorf("handler returned unexpected body: got %v want %v",
+	// 		rr.Body.String(), expected)
+	// }
 }

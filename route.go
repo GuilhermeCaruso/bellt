@@ -107,6 +107,42 @@ func redirectBuiltRoute(w http.ResponseWriter, r *http.Request) {
 // Router methods
 // ----------------------------------------------------------------------------
 
+func (r *Router) HandleFunc(path string, handleFunc http.HandlerFunc, methods ...string) {
+	key, values := getBuiltRouteParams(path)
+
+	if values != nil {
+		valuesList := make(map[int]Variable)
+
+		for idx, name := range values {
+			valuesList[idx] = Variable{
+				Name:  name[1],
+				Value: "",
+			}
+		}
+
+		builtRoute := &BuiltRoute{
+			TempPath: path,
+			Handler:  handleFunc,
+			Var:      valuesList,
+			KeyRoute: key,
+			Methods:  methods,
+		}
+
+		r.built = append(r.built, builtRoute)
+
+	} else {
+
+		route := &Route{
+			Path:    path,
+			Handler: handleFunc,
+		}
+		r.routes = append(r.routes, route)
+
+		route.methods(methods...)
+	}
+
+}
+
 // Route used to define the calling method.
 func (r *Router) Route(path string, handleFunc http.HandlerFunc, methods ...string) *Route {
 	route := &Route{
