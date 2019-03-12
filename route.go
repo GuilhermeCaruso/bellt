@@ -35,8 +35,9 @@ type Route struct {
 }
 
 // SubRoute is a struct to define a subRoute item.
-type SubRoute struct {
-	Route   Route
+type SubHandle struct {
+	Path    string
+	Handler http.HandlerFunc
 	Methods []string
 }
 
@@ -76,24 +77,15 @@ func getRouter() *Router {
 // RedirectBuiltRoute Performs code analysis assigning values to variables
 // in execution time.
 func redirectBuiltRoute(w http.ResponseWriter, r *http.Request) {
-	key, params := getRequestParams(r.URL.Path)
+	selectedBuilt, params := getRequestParams(r.URL.Path)
+
 	router := getRouter()
-
-	var selectedBuilt *BuiltRoute
-
-	for _, built := range router.built {
-		if len(built.Var) == len(params) && built.KeyRoute == key {
-			for idx, varParam := range built.Var {
-				built.Var[idx] = Variable{
-					Name:  varParam.Name,
-					Value: params[idx],
-				}
-			}
-
-			selectedBuilt = built
+	for idx, varParam := range selectedBuilt.Var {
+		selectedBuilt.Var[idx] = Variable{
+			Name:  varParam.Name,
+			Value: params[idx],
 		}
 	}
-
 	var allParams []Variable
 	for _, param := range selectedBuilt.Var {
 		allParams = append(allParams, param)
@@ -103,35 +95,65 @@ func redirectBuiltRoute(w http.ResponseWriter, r *http.Request) {
 	setRouteParams(gateMethod(selectedBuilt.Handler, selectedBuilt.Methods...), allParams).ServeHTTP(w, r)
 }
 
+type Middleware func(http.HandlerFunc) http.HandlerFunc
+
+func Use(handler http.HandlerFunc, middlewares ...Middleware) http.HandlerFunc {
+
+	for x := len(middlewares) - 1; x >= 0; x-- {
+		mid := middlewares[x]
+		handler = mid(handler)
+	}
+
+	return handler
+}
+
 // ----------------------------------------------------------------------------
 // Router methods
 // ----------------------------------------------------------------------------
 
-// Route used to define the calling method.
-func (r *Router) Route(path string, handleFunc http.HandlerFunc, methods ...string) *Route {
-	route := &Route{
-		Path:    path,
+func (r *Router) SubHandleFunc(path string, handleFunc http.HandlerFunc, methods ...string) *SubHandle {
+
+	handleDetail := &SubHandle{
 		Handler: handleFunc,
-	}
-	r.routes = append(r.routes, route)
-
-	route.methods(methods...)
-
-	return route
-}
-
-// SubRoute used to create and define a sub-route belonging to a route grouping.
-func (r *Router) SubRoute(path string, handleFunc http.HandlerFunc, methods ...string) *SubRoute {
-
-	subRoute := &SubRoute{
-		Route: Route{
-			Path:    path,
-			Handler: handleFunc,
-		},
+		Path:    path,
 		Methods: methods,
 	}
+	return handleDetail
+}
 
-	return subRoute
+func (r *Router) HandleFunc(path string, handleFunc http.HandlerFunc, methods ...string) {
+	key, values := getBuiltRouteParams(path)
+	if values != nil {
+		valuesList := make(map[int]Variable)
+
+		for idx, name := range values {
+			valuesList[idx] = Variable{
+				Name:  name[1],
+				Value: "",
+			}
+		}
+
+		builtRoute := &BuiltRoute{
+			TempPath: path,
+			Handler:  handleFunc,
+			Var:      valuesList,
+			KeyRoute: key,
+			Methods:  methods,
+		}
+
+		r.built = append(r.built, builtRoute)
+
+	} else {
+
+		route := &Route{
+			Path:    path,
+			Handler: handleFunc,
+		}
+		r.routes = append(r.routes, route)
+
+		route.methods(methods...)
+	}
+
 }
 
 // Used to define built call method
@@ -144,33 +166,6 @@ func (r *Router) routeBuilder(path string, handleFunc http.HandlerFunc, params .
 
 	r.routes = append(r.routes, route)
 	return route
-}
-
-// BuiltRoute used to define the built route method
-func (r *Router) BuiltRoute(path string, handleFunc http.HandlerFunc, methods ...string) *BuiltRoute {
-
-	valuesList := make(map[int]Variable)
-
-	key, values := getBuiltRouteParams(path)
-
-	for idx, name := range values {
-		valuesList[idx] = Variable{
-			Name:  name[1],
-			Value: "",
-		}
-	}
-
-	builtRoute := &BuiltRoute{
-		TempPath: path,
-		Handler:  handleFunc,
-		Var:      valuesList,
-		KeyRoute: key,
-		Methods:  methods,
-	}
-
-	r.built = append(r.built, builtRoute)
-
-	return builtRoute
 }
 
 // Creation and modeling of built route
@@ -188,13 +183,14 @@ func (r *Router) createBuiltRoute(path string, handler http.HandlerFunc, methods
 	r.routeBuilder(builtPath, handler, allParams...).methods(methods...)
 }
 
-// Group used to create and define a group of sub-routes
-func (r *Router) Group(mainPath string, sr ...*SubRoute) {
+// HandleGroup used to create and define a group of sub-routes
+func (r *Router) HandleGroup(mainPath string, sr ...*SubHandle) {
+
 	for _, route := range sr {
 		var buf bytes.Buffer
 		buf.WriteString(mainPath)
-		buf.WriteString(route.Route.Path)
-		r.Route(buf.String(), route.Route.Handler, route.Methods...)
+		buf.WriteString(route.Path)
+		r.HandleFunc(buf.String(), route.Handler, route.Methods...)
 	}
 }
 
@@ -229,7 +225,7 @@ func checkMethod(m string) bool {
 }
 
 // ----------------------------------------------------------------------------
-// Route middlewares
+// Router middlewares
 // ----------------------------------------------------------------------------
 
 // Ensures that routing is done using valid methods
@@ -256,31 +252,35 @@ func headerBuilder(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-// ----------------------------------------------------------------------------
-// BuiltRoute methods
-// ----------------------------------------------------------------------------
-
 //	Method to obtain route params in a built route
 func getBuiltRouteParams(path string) (string, [][]string) {
 	rgx := regexp.MustCompile(`(?m){(\w*)}`)
-	return strings.Split(path, "/")[1], rgx.FindAllStringSubmatch(path, -1)
+	rgxStart := regexp.MustCompile(`(?m)(^\/)`)
+	rgxEnd := regexp.MustCompile(`(?m)(\/$)`)
+	return rgxEnd.ReplaceAllString(rgxStart.ReplaceAllString(rgx.Split(path, -1)[0], ""), ""), rgx.FindAllStringSubmatch(path, -1)
 }
 
 // Method to obtain request methods
-func getRequestParams(path string) (string, map[int]string) {
-	values := strings.Split(path, "/")
+func getRequestParams(path string) (*BuiltRoute, map[int]string) {
+	router := getRouter()
 
+	var builtRouteList *BuiltRoute
 	params := make(map[int]string)
 
-	key := values[1]
-
-	count := 0
-	for x := 2; x < len(values); x++ {
-		params[count] = values[x]
-		count++
+	for _, route := range router.built {
+		rgx := regexp.MustCompile(route.KeyRoute)
+		if rgx.FindString(path) != "" {
+			if (len(strings.Split(rgx.Split(path, -1)[1], "/")) - 1) == len(route.Var) {
+				builtRouteList = route
+				for idx, val := range strings.Split(rgx.Split(path, -1)[1], "/") {
+					if idx != 0 {
+						params[idx-1] = val
+					}
+				}
+			}
+		}
 	}
-
-	return key, params
+	return builtRouteList, params
 }
 
 func RouteVariables(r *http.Request) *ParamReceiver {
@@ -291,10 +291,6 @@ func RouteVariables(r *http.Request) *ParamReceiver {
 
 	return &receiver
 }
-
-// ----------------------------------------------------------------------------
-// BuiltRoute middlewares
-// ----------------------------------------------------------------------------
 
 // Defines and organizes route parameters by applying them in request
 func setRouteParams(next http.HandlerFunc, params []Variable) http.HandlerFunc {
