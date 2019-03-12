@@ -77,24 +77,15 @@ func getRouter() *Router {
 // RedirectBuiltRoute Performs code analysis assigning values to variables
 // in execution time.
 func redirectBuiltRoute(w http.ResponseWriter, r *http.Request) {
-	key, params := getRequestParams(r.URL.Path)
+	selectedBuilt, params := getRequestParams(r.URL.Path)
+
 	router := getRouter()
-
-	var selectedBuilt *BuiltRoute
-
-	for _, built := range router.built {
-		if len(built.Var) == len(params) && built.KeyRoute == key {
-			for idx, varParam := range built.Var {
-				built.Var[idx] = Variable{
-					Name:  varParam.Name,
-					Value: params[idx],
-				}
-			}
-
-			selectedBuilt = built
+	for idx, varParam := range selectedBuilt.Var {
+		selectedBuilt.Var[idx] = Variable{
+			Name:  varParam.Name,
+			Value: params[idx],
 		}
 	}
-
 	var allParams []Variable
 	for _, param := range selectedBuilt.Var {
 		allParams = append(allParams, param)
@@ -102,6 +93,18 @@ func redirectBuiltRoute(w http.ResponseWriter, r *http.Request) {
 	router.createBuiltRoute(selectedBuilt.TempPath, selectedBuilt.Handler, selectedBuilt.Methods, selectedBuilt.Var)
 
 	setRouteParams(gateMethod(selectedBuilt.Handler, selectedBuilt.Methods...), allParams).ServeHTTP(w, r)
+}
+
+type Middleware func(http.HandlerFunc) http.HandlerFunc
+
+func Use(handler http.HandlerFunc, middlewares ...Middleware) http.HandlerFunc {
+
+	for x := len(middlewares) - 1; x >= 0; x-- {
+		mid := middlewares[x]
+		handler = mid(handler)
+	}
+
+	return handler
 }
 
 // ----------------------------------------------------------------------------
@@ -120,7 +123,6 @@ func (r *Router) SubHandleFunc(path string, handleFunc http.HandlerFunc, methods
 
 func (r *Router) HandleFunc(path string, handleFunc http.HandlerFunc, methods ...string) {
 	key, values := getBuiltRouteParams(path)
-
 	if values != nil {
 		valuesList := make(map[int]Variable)
 
@@ -253,24 +255,32 @@ func headerBuilder(next http.HandlerFunc) http.HandlerFunc {
 //	Method to obtain route params in a built route
 func getBuiltRouteParams(path string) (string, [][]string) {
 	rgx := regexp.MustCompile(`(?m){(\w*)}`)
-	return strings.Split(path, "/")[1], rgx.FindAllStringSubmatch(path, -1)
+	rgxStart := regexp.MustCompile(`(?m)(^\/)`)
+	rgxEnd := regexp.MustCompile(`(?m)(\/$)`)
+	return rgxEnd.ReplaceAllString(rgxStart.ReplaceAllString(rgx.Split(path, -1)[0], ""), ""), rgx.FindAllStringSubmatch(path, -1)
 }
 
 // Method to obtain request methods
-func getRequestParams(path string) (string, map[int]string) {
-	values := strings.Split(path, "/")
+func getRequestParams(path string) (*BuiltRoute, map[int]string) {
+	router := getRouter()
 
+	var builtRouteList *BuiltRoute
 	params := make(map[int]string)
 
-	key := values[1]
-
-	count := 0
-	for x := 2; x < len(values); x++ {
-		params[count] = values[x]
-		count++
+	for _, route := range router.built {
+		rgx := regexp.MustCompile(route.KeyRoute)
+		if rgx.FindString(path) != "" {
+			if (len(strings.Split(rgx.Split(path, -1)[1], "/")) - 1) == len(route.Var) {
+				builtRouteList = route
+				for idx, val := range strings.Split(rgx.Split(path, -1)[1], "/") {
+					if idx != 0 {
+						params[idx-1] = val
+					}
+				}
+			}
+		}
 	}
-
-	return key, params
+	return builtRouteList, params
 }
 
 func RouteVariables(r *http.Request) *ParamReceiver {
