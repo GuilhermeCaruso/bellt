@@ -44,7 +44,7 @@ HandleFunc function responsible for initializing a common route or built through
         handlerFunc - function that will be called on the request
         methods - Slice for endpoint methods ("GET", "POST", "PUT", "DELETE")
     */
-    
+
     router.HandleFunc(path, handlerFunc, methods)
     
 ```
@@ -89,6 +89,36 @@ SubHandleFunc is responsible for initializing a common or built route. Its use m
     
 ```
 
+## Route Params
+
+To use parameters in routes we must group the variables in braces.
+```go
+    router.HandleFunc("/user/{id}", handlerFunc, methods)
+    router.HandleGroup("api/",
+        router.SubHandleFunc("product/{id}", handlerFunc, methods),
+        router.SubHandleFunc("product/{id}/{categorie}", bellt.Use(
+            handlerFunc,
+            middlewareOne,
+            middlewareTwo,
+        ), methods),
+    )
+```
+## Get Route Params
+```go
+    router.HandleFunc("/user/{id}/{user}", exampleFunction, "GET")
+
+    func exampleFunction(w http.ResponseWriter, r *http.Request) {
+        rv := bellt.RouteVariables(r)
+
+        fmt.Println(rv.GetVar("user"))
+        fmt.Println(rv.GetVar("id"))
+    }
+    // Guilherme
+    // 123
+
+```
+    
+
 # Examples
 
 Let's start our simple router application.
@@ -114,6 +144,80 @@ func main() {
 
 ```
 
+## Full Example
+```go
+package main
+
+import (
+	"fmt"
+	"log"
+	"net/http"
+
+	"github.com/GuilhermeCaruso/bellt"
+)
+
+func main() {
+
+	router := bellt.NewRouter()
+
+	router.HandleFunc("/contact/{id}/{user}", bellt.Use(
+		exampleHandler,
+		middlewareOne,
+		middlewareTwo,
+	), "GET", "PUT")
+
+	router.HandleFunc("/contact", bellt.Use(
+		exampleNewHandler,
+		middlewareOne,
+		middlewareTwo,
+	), "GET", "PUT")
+
+	router.HandleGroup("/api",
+		router.SubHandleFunc("/check", bellt.Use(
+			exampleNewHandler,
+			middlewareOne,
+			middlewareTwo,
+		), "GET", "PUT"),
+		router.SubHandleFunc("/check/{id}/{user}", bellt.Use(
+			exampleHandler,
+			middlewareOne,
+			middlewareTwo,
+		), "GET", "PUT"),
+	)
+
+	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+
+func exampleHandler(w http.ResponseWriter, r *http.Request) {
+	rv := bellt.RouteVariables(r)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	w.Write([]byte(fmt.Sprintf(`{"id": %v, "user": %v}`, rv.GetVar("user"), rv.GetVar("id"))))
+}
+
+func exampleNewHandler(w http.ResponseWriter, r *http.Request) {
+	rv := bellt.RouteVariables(r)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	w.Write([]byte(`{"msg": "Works"}`))
+}
+
+func middlewareOne(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("Step One")
+
+		next.ServeHTTP(w, r)
+	}
+}
+
+func middlewareTwo(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("Step Two")
+
+		next.ServeHTTP(w, r)
+	}
+}
+```
 
 # Author
 Guilherme Caruso  [@guicaruso_](https://twitter.com/guicaruso_) on twitter
