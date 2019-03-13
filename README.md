@@ -225,4 +225,4 @@ func middlewareTwo(next http.HandlerFunc) http.HandlerFunc {
 Guilherme Caruso  [@guicaruso_](https://twitter.com/guicaruso_) on twitter
 
 # License
-BSD licensed. See the LICENSE file for details.
+MIT licensed. See the LICENSE file for details.
