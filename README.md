@@ -6,6 +6,8 @@
 # Bellt  
 > Simple Golang HTTP router
 
+[![Mentioned in Awesome Go](https://awesome.re/mentioned-badge.svg)](https://github.com/avelino/awesome-go)  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Go Report Card](https://goreportcard.com/badge/github.com/GuilhermeCaruso/bellt)](https://goreportcard.com/report/github.com/GuilhermeCaruso/bellt) [![codecov](https://codecov.io/gh/GuilhermeCaruso/bellt/branch/master/graph/badge.svg)](https://codecov.io/gh/GuilhermeCaruso/bellt) [![Build Status](https://travis-ci.com/GuilhermeCaruso/bellt.svg?branch=master)](https://travis-ci.com/GuilhermeCaruso/bellt) ![GitHub](https://img.shields.io/badge/golang%20->=1.7-blue.svg) [![GoDoc](https://godoc.org/github.com/GuilhermeCaruso/bellt?status.svg)](https://godoc.org/github.com/GuilhermeCaruso/bellt) 
+
 ## Setup
 
 To get Bellt
