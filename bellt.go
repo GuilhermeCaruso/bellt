@@ -7,8 +7,8 @@ package bellt
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"regexp"
 	"strings"
@@ -163,27 +163,34 @@ func getRouter() *Router {
 func redirectBuiltRoute(w http.ResponseWriter, r *http.Request) {
 	selectedBuilt, params := getRequestParams(r.URL.Path)
 
-	router := getRouter()
-	for idx, varParam := range selectedBuilt.Var {
-		selectedBuilt.Var[idx] = Variable{
-			Name:  varParam.Name,
-			Value: params[idx],
+	if selectedBuilt != nil {
+		router := getRouter()
+		for idx, varParam := range selectedBuilt.Var {
+			selectedBuilt.Var[idx] = Variable{
+				Name:  varParam.Name,
+				Value: params[idx],
+			}
 		}
-	}
-	var allParams []Variable
-	for _, param := range selectedBuilt.Var {
-		allParams = append(allParams, param)
-	}
-	router.createBuiltRoute(
-		selectedBuilt.TempPath,
-		selectedBuilt.Handler,
-		selectedBuilt.Methods,
-		selectedBuilt.Var)
+		var allParams []Variable
+		for _, param := range selectedBuilt.Var {
+			allParams = append(allParams, param)
+		}
+		router.createBuiltRoute(
+			selectedBuilt.TempPath,
+			selectedBuilt.Handler,
+			selectedBuilt.Methods,
+			selectedBuilt.Var)
 
-	setRouteParams(gateMethod(
-		selectedBuilt.Handler,
-		selectedBuilt.Methods...),
-		allParams).ServeHTTP(w, r)
+		setRouteParams(gateMethod(
+			selectedBuilt.Handler,
+			selectedBuilt.Methods...),
+			allParams).ServeHTTP(w, r)
+	} else {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(HTTPStatusCode["NOT_FOUND"])
+		w.Write([]byte(`{"msg": "route not found"}`))
+	}
+
 }
 
 // Use becomes responsible for executing all middlewares passed through a
@@ -251,9 +258,12 @@ func (r *Router) HandleFunc(path string, handleFunc http.HandlerFunc,
 			Path:    path,
 			Handler: handleFunc,
 		}
-		r.routes = append(r.routes, route)
+		err := route.methods(methods...)
 
-		route.methods(methods...)
+		if err == nil {
+			r.routes = append(r.routes, route)
+		}
+
 	}
 
 }
@@ -362,22 +372,25 @@ func (r *Router) createBuiltRoute(path string, handler http.HandlerFunc,
 
 // Internal method responsible for validating if the request method used exists
 // for the route presented.
-func (r *Route) methods(methods ...string) {
+func (r *Route) methods(methods ...string) (err error) {
 	for _, method := range methods {
 		if !checkMethod(method) {
-			log.Fatal(fmt.Sprintf("Method %s on %s not allowed",
-				method, r.Path))
+			msgErro := fmt.Sprintf("Method %s on %s not allowed",
+				method, r.Path)
+			err = errors.New(msgErro)
 		}
 	}
+	if err == nil {
+		if len(r.Params) > 0 {
+			http.HandleFunc(r.Path, headerBuilder(
+				setRouteParams(gateMethod(r.Handler, methods...), r.Params)))
+		} else {
+			http.HandleFunc(r.Path, headerBuilder(gateMethod(r.Handler,
+				methods...)))
 
-	if len(r.Params) > 0 {
-		http.HandleFunc(r.Path, headerBuilder(
-			setRouteParams(gateMethod(r.Handler, methods...), r.Params)))
-	} else {
-		http.HandleFunc(r.Path, headerBuilder(gateMethod(r.Handler,
-			methods...)))
+		}
 	}
-
+	return
 }
 
 // Internal method that validates whether the value passed in methods matches
