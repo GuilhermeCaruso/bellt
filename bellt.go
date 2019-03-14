@@ -163,27 +163,34 @@ func getRouter() *Router {
 func redirectBuiltRoute(w http.ResponseWriter, r *http.Request) {
 	selectedBuilt, params := getRequestParams(r.URL.Path)
 
-	router := getRouter()
-	for idx, varParam := range selectedBuilt.Var {
-		selectedBuilt.Var[idx] = Variable{
-			Name:  varParam.Name,
-			Value: params[idx],
+	if selectedBuilt != nil {
+		router := getRouter()
+		for idx, varParam := range selectedBuilt.Var {
+			selectedBuilt.Var[idx] = Variable{
+				Name:  varParam.Name,
+				Value: params[idx],
+			}
 		}
-	}
-	var allParams []Variable
-	for _, param := range selectedBuilt.Var {
-		allParams = append(allParams, param)
-	}
-	router.createBuiltRoute(
-		selectedBuilt.TempPath,
-		selectedBuilt.Handler,
-		selectedBuilt.Methods,
-		selectedBuilt.Var)
+		var allParams []Variable
+		for _, param := range selectedBuilt.Var {
+			allParams = append(allParams, param)
+		}
+		router.createBuiltRoute(
+			selectedBuilt.TempPath,
+			selectedBuilt.Handler,
+			selectedBuilt.Methods,
+			selectedBuilt.Var)
 
-	setRouteParams(gateMethod(
-		selectedBuilt.Handler,
-		selectedBuilt.Methods...),
-		allParams).ServeHTTP(w, r)
+		setRouteParams(gateMethod(
+			selectedBuilt.Handler,
+			selectedBuilt.Methods...),
+			allParams).ServeHTTP(w, r)
+	} else {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(HTTPStatusCode["NOT_FOUND"])
+		w.Write([]byte(`{"msg": "not found"}`))
+	}
+
 }
 
 // Use becomes responsible for executing all middlewares passed through a
