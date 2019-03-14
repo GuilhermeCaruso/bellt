@@ -53,6 +53,47 @@ func TestBuiltRoute(t *testing.T) {
 	}
 }
 
+func TestNotFound(t *testing.T) {
+	router := NewRouter()
+
+	req, err := http.NewRequest("GET", "/use", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	router.HandleFunc("/user/{id}", func(w http.ResponseWriter, r *http.Request) {
+		rv := RouteVariables(r)
+		id := fmt.Sprintf("%v", rv.GetVar("id"))
+		w.Write([]byte(id))
+	}, "GET")
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(redirectBuiltRoute)
+
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusNotFound {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusOK)
+	}
+
+	expected := `{"msg": "route not found"}`
+	if rr.Body.String() != expected {
+		t.Errorf("handler returned unexpected body: got %v want %v",
+			rr.Body.String(), expected)
+	}
+}
+
+func TestMethod(t *testing.T) {
+
+	router := NewRouter()
+	router.HandleFunc("/user", func(w http.ResponseWriter, r *http.Request) {
+		rv := RouteVariables(r)
+		id := fmt.Sprintf("%v", rv.GetVar("id"))
+		w.Write([]byte(id))
+	}, "RET")
+
+}
+
 func TestRoute(t *testing.T) {
 	router := NewRouter()
 
