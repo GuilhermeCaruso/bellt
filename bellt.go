@@ -75,7 +75,7 @@ type ParamReceiver struct {
 // that should be used in conjunction with bellt.Use().
 type Middleware func(http.HandlerFunc) http.HandlerFunc
 
-// Key is a type responsile for define a requester key param
+// Key is a type responsible for define a requester key param
 type key string
 
 // NewRouter is responsible to initialize a "singleton" router instance.
