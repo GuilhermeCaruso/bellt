@@ -75,6 +75,9 @@ type ParamReceiver struct {
 // that should be used in conjunction with bellt.Use().
 type Middleware func(http.HandlerFunc) http.HandlerFunc
 
+// Key is a type responsile for define a requester key param
+type key string
+
 // NewRouter is responsible to initialize a "singleton" router instance.
 func NewRouter() *Router {
 	if mainRouter == nil {
@@ -428,7 +431,8 @@ func setRouteParams(next http.HandlerFunc, params []Variable) http.HandlerFunc {
 		ctx := r.Context()
 
 		for _, param := range params {
-			ctx = context.WithValue(ctx, param.Name, param.Value)
+			name := key(param.Name)
+			ctx = context.WithValue(ctx, name, param.Value)
 		}
 
 		r = r.WithContext(ctx)
@@ -443,7 +447,7 @@ func setRouteParams(next http.HandlerFunc, params []Variable) http.HandlerFunc {
 
 // GetVar return a value of router variable
 func (pr *ParamReceiver) GetVar(variable string) interface{} {
-	return pr.request.Context().Value(variable)
+	return pr.request.Context().Value(key(variable))
 }
 
 // ----------------------------------------------------------------------------
