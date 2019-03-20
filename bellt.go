@@ -178,8 +178,7 @@ func Use(handler http.HandlerFunc, middleware ...Middleware) http.HandlerFunc {
 // HandleFunc function responsible for initializing a common route or built
 // through the Router. All non-grouped routes must be initialized by this
 // method.
-func (r *Router) HandleFunc(path string, handleFunc http.HandlerFunc,
-	methods ...string) {
+func (r *Router) HandleFunc(path string, handleFunc http.HandlerFunc, methods ...string) {
 	key, values := getBuiltRouteParams(path)
 	if values != nil {
 		valuesList := make(map[int]Variable)
@@ -243,31 +242,6 @@ func (r *Router) HandleGroup(mainPath string, sr ...*SubHandle) {
 		r.HandleFunc(buf.String(), route.Handler, route.Methods...)
 	}
 }
-
-/*
-	The HandleGroup and SubHandleFunc application should be done as follows
-	within the router.HandleFunc() method:
-
-		router: = bellt.NewRouter ()
-
-		func main () {
-
-			router.HandleGroup("/api",
-
-				router.SubHandleFunc("/oi/{id}", bellt.Use(
-					healthApplication,
-					middleware,
-				), "GET", "PUT"),
-
-				router.SubHandleFunc("/oi/{user}", bellt.Use(
-					healthApplication,
-					middleware,
-				), "GET", "PUT"),
-
-			)
-			log.Fatal (http.ListenAndServe (": 8080", nil))
-		}
-*/
 
 // SubHandleFunc is responsible for initializing a common or built route. Its
 // use must be made within the scope of the HandleGroup() method, where the
