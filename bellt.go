@@ -82,7 +82,7 @@ type key string
 func NewRouter() *Router {
 	if mainRouter == nil {
 		http.HandleFunc("/health", healthApplication)
-		http.Handle("/", verifyBuiltRoutes(redirectBuiltRoute))
+		http.HandleFunc("/", redirectBuiltRoute)
 		mainRouter = &Router{}
 	}
 	return mainRouter
@@ -305,11 +305,11 @@ func (r *Route) methods(methods ...string) (err error) {
 	}
 	if err == nil {
 		if len(r.Params) > 0 {
-			http.HandleFunc(r.Path, headerBuilder(
-				setRouteParams(gateMethod(r.Handler, methods...), r.Params)))
+			http.HandleFunc(r.Path,
+				setRouteParams(gateMethod(r.Handler, methods...), r.Params))
 		} else {
-			http.HandleFunc(r.Path, headerBuilder(gateMethod(r.Handler,
-				methods...)))
+			http.HandleFunc(r.Path, gateMethod(r.Handler,
+				methods...))
 
 		}
 	}
@@ -344,14 +344,6 @@ func gateMethod(next http.HandlerFunc, methods ...string) http.HandlerFunc {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte(`{"error": "The method for this route doesnt exist"}`))
 
-	}
-}
-
-// Defines JSON header for standard REST service routes.
-func headerBuilder(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		next.ServeHTTP(w, r)
 	}
 }
 
@@ -433,11 +425,4 @@ func healthApplication(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"alive": "Server running"}`))
-}
-
-// Converts and prepares Handle function for built route analysis
-func verifyBuiltRoutes(next http.HandlerFunc) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		next.ServeHTTP(w, r)
-	})
 }
