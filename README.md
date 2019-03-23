@@ -96,9 +96,9 @@ SubHandleFunc is responsible for initializing a common or built route. Its use m
 To use parameters in routes we must group the variables in braces.
 ```go
     router.HandleFunc("/user/{id}", handlerFunc, methods)
-    router.HandleGroup("api/",
-        router.SubHandleFunc("product/{id}", handlerFunc, methods),
-        router.SubHandleFunc("product/{id}/{categorie}", bellt.Use(
+    router.HandleGroup("/api",
+        router.SubHandleFunc("/product/{id}", handlerFunc, methods),
+        router.SubHandleFunc("/product/{id}/{categorie}", bellt.Use(
             handlerFunc,
             middlewareOne,
             middlewareTwo,
@@ -140,7 +140,7 @@ func main() {
 
 	router := bellt.NewRouter()
 
-	router.HandleFunc("/healt", healthApplication , "GET", "PUT")
+	router.HandleFunc("/health", healthApplication , "GET", "PUT")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
@@ -223,6 +223,10 @@ func middlewareTwo(next http.HandlerFunc) http.HandlerFunc {
 
 # Author
 Guilherme Caruso  [@guicaruso_](https://twitter.com/guicaruso_) on twitter
+
+# Presentation
+Guilherme Caruso - Cabify - 21/03/2019 - São Paulo /Brazil  
+[Contruindo Rotas Parametrizadas em GO](https://www.slideshare.net/guimartinscaruso/criando-rotas-parametrizadas-em-go)
 
 # License
 MIT licensed. See the LICENSE file for details.
