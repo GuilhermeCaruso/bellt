@@ -226,7 +226,7 @@ Guilherme Caruso  [@guicaruso_](https://twitter.com/guicaruso_) on twitter
 
 # Presentation
 Guilherme Caruso - Cabify - 21/03/2019 - São Paulo /Brazil  
-[Contruindo Rotas Parametrizadas em GO](https://www.slideshare.net/guimartinscaruso/criando-rotas-parametrizadas-em-go)
+[Construindo Rotas Parametrizadas em GO](https://www.slideshare.net/guimartinscaruso/criando-rotas-parametrizadas-em-go)
 
 # License
 MIT licensed. See the LICENSE file for details.
