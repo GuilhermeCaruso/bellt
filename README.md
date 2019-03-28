@@ -229,6 +229,6 @@ Guilherme Caruso - Cabify- GolangSP Meetup 2 - 21/03/2019 - São Paulo /Brazil
 
 Slides - [Construindo Rotas Parametrizadas em GO](https://www.slideshare.net/guimartinscaruso/criando-rotas-parametrizadas-em-go)
 
-Video - [GolangSP Meetup 2](https://www.youtube.com/watch?v=HAfGrfBbSrY&feature=youtu.be)
+Video - [GolangSP Meetup 2](https://www.youtube.com/watch?v=nxsfyadxzmI)
 # License
 MIT licensed. See the LICENSE file for details.
