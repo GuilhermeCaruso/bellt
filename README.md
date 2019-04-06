@@ -128,9 +128,8 @@ HandleGroup is responsible for creating a group of routes. The main path can be 
 /*
 	[mainPath] - Main route used in all subr-outes
 	
-	[subHandleFunc] - SubHandleFunc function responsible 
-	for initializing a common route or built through the Router. 
-	All grouped routes must be initialized by this method
+	[subHandleFunc] - SubHandleFunc function responsiblefor initializing a common route or
+	built through the Router. All grouped routes must be initialized by this method
 */
 
 router.HandleGroup(mainPath, ...SubHandleFunc)
