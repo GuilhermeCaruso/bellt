@@ -20,12 +20,19 @@ The project so far has the following functionalities:
  * [Install](#install)
  * [Guide](#guide)
 	* [Router](#router)
-	* [Methods](#router-methods)
 		* [HandleFunc](#handleFunc)
-		* [HandleGroup](#handleFunc)
- * Parameterized Routes
- * Middleware
- * Full Example
+		* [HandleGroup](#handleGroup)
+		* [SubHandleFunc](#subHandleFunc)
+	* [Middleware](#middleware)
+		* [Use](#use)
+	* [Parameterized Routes](#parameterized-routes)
+		* [Route Variables](#route-variables)
+			* [GetVar](#getVar)
+ * [Full Example](#full-example)
+ * [Benchmark](#benchmark)
+ * [Author](#author)
+ * [Presentation](#presentation)
+ * [License](#license)
 
 # Install
 
@@ -51,7 +58,7 @@ govendor fetch github.com/GuilhermeCaruso/bellt
 
 To initialize our router
 ```go
-    var router = bellt.NewRouter()
+var router = bellt.NewRouter()
 ```
 
 ```go
@@ -73,20 +80,18 @@ func main() {
 
 ```
 
-## Router Methods
-
-#### HandleFunc   
+### HandleFunc   
 
 HandleFunc function responsible for initializing a common route or built through the Router. All non-grouped routes must be initialized by this method.
 
 ```go
-    /*
-        path - Endpoint string
-        handlerFunc - function that will be called on the request
-        methods - Slice for endpoint methods ("GET", "POST", "PUT", "DELETE")
-    */
+/*
+	[path] - Endpoint string
+	[handlerFunc] - Function that will be called on the request
+	[methods] - Slice for endpoint methods ("GET", "POST", "PUT", "DELETE")
+*/
 
-    router.HandleFunc(path, handlerFunc, methods)
+router.HandleFunc(path, handlerFunc, methods)
     
 ```
 ```go
@@ -114,80 +119,91 @@ func belltHandle(w http.ResponseWriter, r *http.Request){
 }
 
 ```
-- HandleFunc with Middlewares
+
+### HandleGroup   
+
+HandleGroup is responsible for creating a group of routes. The main path can be set for all other routes.
+
 ```go
-    /*
-        path - Endpoint string
-        handlerFunc - function that will be called on the request
-        methods - Slice for endpoint methods ("GET", "POST", "PUT", "DELETE")
-    */
+/*
+	[mainPath] - Main route used in all subr-outes
+	[subHandleFunc] - SubHandleFunc function responsible for initializing a common route or built through the Router. All grouped routes must be initialized by this method
+*/
 
-    router.HandleFunc(path, bellt.Use(
-        handlerFunc,
-        middlewareOne,
-        middlewareTwo,
-    ), methods)
-   
-```
-
-- HandleGroup && SubHandleFunc    
-
-HandleGroup used to create and define a group of sub-routes.
-
-SubHandleFunc is responsible for initializing a common or built route. Its use must be made within the scope of the HandleGroup() method, where the main path will be declared.
-```go
-
-    /*
-        mainPath - String route grouper
-        path - Endpoint string
-        handlerFunc - function that will be called on the request
-        methods - Slice for endpoint methods ("GET", "POST", "PUT", "DELETE")
-    */
-
-    router.HandleGroup(mainPath,
-        router.SubHandleFunc(path, handlerFunc, methods),
-        router.SubHandleFunc(path, bellt.Use(
-            handlerFunc,
-            middlewareOne,
-            middlewareTwo,
-        ), methods),
-    )
+router.HandleGroup(mainPath, ...SubHandleFunc)
     
 ```
 
-## Route Params
+### SubHandleFunc  
 
-To use parameters in routes we must group the variables in braces.
+SubHandleFunc is responsible for initializing a common or built route. Its use must be made within the scope of the HandleGroup method, where the main path will be declared.
+
 ```go
-    router.HandleFunc("/user/{id}", handlerFunc, methods)
-    router.HandleGroup("/api",
-        router.SubHandleFunc("/product/{id}", handlerFunc, methods),
-        router.SubHandleFunc("/product/{id}/{categorie}", bellt.Use(
-            handlerFunc,
-            middlewareOne,
-            middlewareTwo,
-        ), methods),
-    )
-```
-## Get Route Params
-```go
-    router.HandleFunc("/user/{id}/{user}", exampleFunction, "GET")
+/*
+	[path] - Endpoint string
+	[handlerFunc] - Function that will be called on the request
+	[methods] - Slice for endpoint methods ("GET", "POST", "PUT", "DELETE")
+*/
 
-    func exampleFunction(w http.ResponseWriter, r *http.Request) {
-        rv := bellt.RouteVariables(r)
-
-        fmt.Println(rv.GetVar("user"))
-        fmt.Println(rv.GetVar("id"))
-    }
-    // Guilherme
-    // 123
-
-```
+router.SubHandleFunc(path, handlerFunc, methods)
     
+```
+```go
+package main
 
-# Examples
+import (
+	"fmt"
+	"log"
+	"net/http"
 
-Let's start our simple router application.
+	"github.com/GuilhermeCaruso/bellt"
+)
+
+func main() {
+	router := bellt.NewRouter()
+
+	router.HandleGroup("/api",
+		router.SubHandleFunc("/bellt", belltHandle, "GET"),
+		router.SubHandleFunc("/check", checkHandle, "GET"),
+	)
+
+	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+
+func belltHandle(w http.ResponseWriter, r *http.Request){
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Simple Golang HTTP router")
+}
+
+func checkHandle(w http.ResponseWriter, r *http.Request){
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Ok!")
+}
+
+```
+
+## Middleware
+
+The declaration of middlewares in HandleFunc or SubHandleFunc should be done using the *Use* method
+
+### Use
+
+```go
+/*
+	handlerFunc - Function that will be called on the request 
+	middlewareList - Slice of middleware that will be used in the request (Middleware)
+*/
+bellt.Use(handlerFunc, ...middlewareList)
+```
+
+The middleware type has a following signature
+
+
+```go
+type Middleware func(http.HandlerFunc) http.HandlerFunc
+```
+
+Applying middlewares to routes
 
 ```go
 package main
@@ -204,13 +220,139 @@ func main() {
 
 	router := bellt.NewRouter()
 
-	router.HandleFunc("/health", healthApplication , "GET", "PUT")
+	router.HandleFunc("/hello", bellt.Use(
+		exampleHandler,
+		middlewareOne,
+		middlewareTwo,
+	), "GET")
+
+	router.HandleGroup("/api",
+		router.SubHandleFunc("/hello", bellt.Use(
+			exampleHandler,
+			middlewareOne,
+			middlewareTwo,
+		), "GET"),
+	)
+
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
+func exampleHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`Hello Middleware!`))
+}
+
+func middlewareOne(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("Step One")
+		next.ServeHTTP(w, r)
+	}
+}
+
+func middlewareTwo(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("Step Two")
+		next.ServeHTTP(w, r)
+	}
+}
 ```
 
-## Full Example
+## Parameterized Routes
+
+Route parameters must be passed using `{}` as scope limiter
+
+```go
+router.HandleFunc("/hello/{name}", handlerFunc, "GET")
+
+router.HandleGroup("/api", 
+	SubHandleFunc("/item/{id}", handlerFunc, "GET")
+)
+```
+
+### Route Variables
+
+RouteVariables used to capture and store parameters passed to built routes.
+
+Need to pass the *Request of the HandlerFunc used in the HandleFunc method.
+
+```go
+/*
+	r = *Request of the HandlerFunc
+*/
+rv := bellt.RouteVariables(r)
+```
+
+The declaration must be made within the HandlerFunc
+
+```go
+func exampleHandler(w http.ResponseWriter, r *http.Request) {
+	rv := bellt.RouteVariables(r)
+	/*[...]*/
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Hello!"))
+}
+```
+
+#### GetVar
+
+GetVar returns the parameter value of the route
+
+```go
+/*
+	r = *Request of the HandlerFunc
+	param = Parameter name string
+*/
+rv := bellt.RouteVariables(r)
+
+rv.GetVar(param)
+```
+
+```go
+func exampleHandler(w http.ResponseWriter, r *http.Request) {
+	rv := bellt.RouteVariables(r)
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(fmt.Sprintf(`Hello %v gopher!`, rv.GetVar("color")))))
+}
+```
+
+The complete implementation of parameterized routes should look like this:
+
+```go
+package main
+
+import (
+	"fmt"
+	"log"
+	"net/http"
+
+	"github.com/GuilhermeCaruso/bellt"
+)
+
+func main() {
+
+	router := bellt.NewRouter()
+
+	router.HandleFunc("/contact/{id}/{user}", exampleHandler, "GET")
+
+	router.HandleGroup("/api",
+		router.SubHandleFunc("/check/{id}/{user}", exampleHandler, "GET"),
+	)
+
+	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+
+func exampleHandler(w http.ResponseWriter, r *http.Request) {
+	rv := bellt.RouteVariables(r)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(fmt.Sprintf(`{"id": %v, "user": %v}`, rv.GetVar("user"), rv.GetVar("id"))))
+}
+```
+
+
+# Full Example
+
 ```go
 package main
 
@@ -230,41 +372,44 @@ func main() {
 		exampleHandler,
 		middlewareOne,
 		middlewareTwo,
-	), "GET", "PUT")
+	), "GET")
 
 	router.HandleFunc("/contact", bellt.Use(
 		exampleNewHandler,
 		middlewareOne,
 		middlewareTwo,
-	), "GET", "PUT")
+	), "GET")
 
 	router.HandleGroup("/api",
 		router.SubHandleFunc("/check", bellt.Use(
 			exampleNewHandler,
 			middlewareOne,
 			middlewareTwo,
-		), "GET", "PUT"),
+		), "GET"),
 		router.SubHandleFunc("/check/{id}/{user}", bellt.Use(
 			exampleHandler,
 			middlewareOne,
 			middlewareTwo,
-		), "GET", "PUT"),
+		), "GET"),
 	)
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
 func exampleHandler(w http.ResponseWriter, r *http.Request) {
+
 	rv := bellt.RouteVariables(r)
+
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
+	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(fmt.Sprintf(`{"id": %v, "user": %v}`, rv.GetVar("user"), rv.GetVar("id"))))
 }
 
 func exampleNewHandler(w http.ResponseWriter, r *http.Request) {
 	rv := bellt.RouteVariables(r)
+
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
+	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"msg": "Works"}`))
 }
 
@@ -285,6 +430,14 @@ func middlewareTwo(next http.HandlerFunc) http.HandlerFunc {
 }
 ```
 
+# Benchmark
+
+Applying requisition performance tests, the following results were obtained, showing the initial potency of the Bellt package.
+
+<p align="center">
+    <img width="800" src="./assets/benchmark.png">
+</p>
+
 # Author
 Guilherme Caruso  [@guicaruso_](https://twitter.com/guicaruso_) on twitter
 
@@ -294,5 +447,6 @@ Guilherme Caruso - Cabify- GolangSP Meetup 2 - 21/03/2019 - São Paulo /Brazil
 Slides - [Construindo Rotas Parametrizadas em GO](https://www.slideshare.net/guimartinscaruso/criando-rotas-parametrizadas-em-go)
 
 Video - [GolangSP Meetup 2](https://www.youtube.com/watch?v=nxsfyadxzmI)
+
 # License
 MIT licensed. See the LICENSE file for details.
