@@ -16,14 +16,19 @@ The project so far has the following functionalities:
 * All requests can be made through fixed patterns, querystrings and parameters.
 * Obtaining the requisition parameters in the controller functions.
 ---
-## Summary
+# Summary
  * [Install](#install)
- * Examples
+ * [Guide](#guide)
+	* [Router](#router)
+	* [Methods](#router-methods)
+		* [HandleFunc](#handleFunc)
+		* [HandleGroup](#handleFunc)
  * Parameterized Routes
  * Middleware
  * Full Example
 
-## Install
+# Install
+
 
 To get Bellt
 
@@ -49,9 +54,28 @@ To initialize our router
     var router = bellt.NewRouter()
 ```
 
+```go
+package main
+
+import (
+	"fmt"
+	"log"
+	"net/http"
+
+	"github.com/GuilhermeCaruso/bellt"
+)
+
+func main() {
+	router := bellt.NewRouter()
+
+	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+
+```
+
 ## Router Methods
 
-- HandleFunc   
+#### HandleFunc   
 
 HandleFunc function responsible for initializing a common route or built through the Router. All non-grouped routes must be initialized by this method.
 
@@ -64,6 +88,31 @@ HandleFunc function responsible for initializing a common route or built through
 
     router.HandleFunc(path, handlerFunc, methods)
     
+```
+```go
+package main
+
+import (
+	"fmt"
+	"log"
+	"net/http"
+
+	"github.com/GuilhermeCaruso/bellt"
+)
+
+func main() {
+	router := bellt.NewRouter()
+
+	router.HandleFunc("/bellt", belltHandler, "GET")
+
+	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+
+func belltHandle(w http.ResponseWriter, r *http.Request){
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Simple Golang HTTP router")
+}
+
 ```
 - HandleFunc with Middlewares
 ```go
