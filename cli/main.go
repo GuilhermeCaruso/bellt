@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"os"
 
 	"github.com/GuilhermeCaruso/bellt/cli/commands"
 	"github.com/GuilhermeCaruso/bellt/cli/pkg"
@@ -13,6 +13,6 @@ var testCommandList = []pkg.Command{
 
 func main() {
 	if err := pkg.StartCommandLine(testCommandList); err != nil {
-		fmt.Println(err.Error())
+		os.Exit(1)
 	}
 }

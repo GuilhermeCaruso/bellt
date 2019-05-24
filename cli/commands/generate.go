@@ -7,9 +7,10 @@ import (
 
 // Generate is a struct responsible for the document generation command line
 type Generate struct {
-	Type       int
-	SourceFile string
-	OutputFile string
+	Type        int
+	SourceFile  string
+	OutputFile  string
+	HelpCommand bool
 }
 
 const helpTextGenerate = `Generate is the command line to generate route documentation`
@@ -27,7 +28,7 @@ const helpLongTextGenerate = `
 		0: all
 		1: routesOnly
 		2: middlewaresOnly
-		3: staticFilesOnly 
+		3: staticFilesOnly
 
 	- documentationYamlFile: string
 
@@ -60,10 +61,16 @@ func (cmd *Generate) Register(fs *flag.FlagSet) {
 	fs.IntVar(&cmd.Type, "t", 0, "define the type of documentation")
 	fs.StringVar(&cmd.SourceFile, "f", "./belltdoc.yaml", "define the source file location")
 	fs.StringVar(&cmd.OutputFile, "o", "./documentation", "define the document destination")
+	fs.BoolVar(&cmd.HelpCommand, "help", false, "show a help documentation")
 }
 
 // Run is the command line execution function
 func (cmd *Generate) Run() {
+	if cmd.HelpCommand {
+		fmt.Println(cmd.LongHelp())
+		return
+	}
+
 	if cmd.SourceFile == "" || cmd.OutputFile == "" {
 		fmt.Println("Please inform the location of the documentation file and its output.")
 		return

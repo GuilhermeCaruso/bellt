@@ -23,7 +23,7 @@ func TestEmptyStartCommandLine(t *testing.T) {
 func TestStartCommandLineWithWrongArgumentLength(t *testing.T) {
 	want := "Please pass some command"
 	os.Args = []string{
-		"--test=123",
+		"--t=123",
 	}
 	err := StartCommandLine(emptyOnlyOneCommand)
 	if err.Error() != want {
@@ -33,8 +33,10 @@ func TestStartCommandLineWithWrongArgumentLength(t *testing.T) {
 
 func TestStartCommandLineWithRightArgumentLength(t *testing.T) {
 	os.Args = []string{
-		"--test=123",
-		"--test2=456",
+		"bellt",
+		"generate",
+		"--t=123",
+		"--f=456",
 	}
 	err := StartCommandLine(emptyOnlyOneCommand)
 	if err != nil {
@@ -58,8 +60,20 @@ func TestStartCommandLineWithCommand(t *testing.T) {
 	os.Args = []string{
 		"bellt",
 		"generate",
-		"--test2=456",
+		"--t=456",
 	}
+	err := StartCommandLine(emptyOnlyOneCommand)
+	if err != nil {
+		t.Errorf("Error handling error: want %s, got %s", "nil", err.Error())
+	}
+}
+
+func TestStartCommandLineWithHelpCommand(t *testing.T){
+	os.Args = []string{
+		"bellt",
+		"help",
+	}
+
 	err := StartCommandLine(emptyOnlyOneCommand)
 	if err != nil {
 		t.Errorf("Error handling error: want %s, got %s", "nil", err.Error())

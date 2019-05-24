@@ -7,8 +7,10 @@ package pkg
 import (
 	"errors"
 	"flag"
+	"fmt"
 	"os"
 	"regexp"
+	"text/tabwriter"
 )
 
 // Command is an interface responsible for setting the  default format for the
@@ -33,19 +35,32 @@ type UserCommand struct {
 // routine of the application
 func StartCommandLine(commands []Command) error {
 	if len(commands) == 0 {
-		return errors.New("Command line initialization require one or more commands")
+		return errors.
+			New("Command line initialization require one or more commands")
 	}
 
 	if len(os.Args) < 2 {
+		InitCommandText(commands)
 		return errors.New("Please pass some command")
 	}
 
 	userPassedArguments := os.Args[1:]
 
-	command := ArgumentsFilter(userPassedArguments)
+	userCommand := ArgumentsFilter(userPassedArguments)
 
-	if command.Command == "" {
+	if userCommand.Command == "" {
 		return errors.New("Please pass some command")
+	}
+	for _, command := range commands {
+		if userCommand.Command == "help" {
+			InitCommandText(commands)
+		}
+		if userCommand.Command == command.Name() {
+			flagSet := flag.NewFlagSet(command.Name(), flag.ContinueOnError)
+			command.Register(flagSet)
+			flagSet.Parse(os.Args[2:])
+			command.Run()
+		}
 	}
 
 	return nil
@@ -73,56 +88,19 @@ func ArgumentsFilter(commands []string) UserCommand {
 	return commandDefinition
 }
 
-// // StartCommandLine executes and initializes the entire command line
-// // routine of the application
-// func StartsCommandLine(commands []Command) {
-// 	initialArguments := os.Args
+// InitCommandText returns a help text for the user at the
+// command line.
+func InitCommandText(commands []Command) {
+	fmt.Println("Bellt")
+	fmt.Println("Please use any of the listed commands:")
+	tabWriter := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+	for _, command := range commands {
+		fmt.Fprintf(tabWriter, "\t- %s\t%s\n", command.Name(), command.Help())
+	}
+	tabWriter.Flush()
+	fmt.Println(``)
 
-// 	if len(initialArguments) < 2 {
-// 		InitCommandText(commands)
-// 		return
-// 	}
-
-// 	commandBuilder := ArgumentsFilter(initialArguments[1:])
-
-// 	argumentsCounter := 0
-
-// 	for _, command := range commands {
-// 		if commandBuilder.Command == command.Name() {
-// 			argumentsCounter++
-// 			flagSet := flag.NewFlagSet(command.Name(), flag.ContinueOnError)
-// 			command.Register(flagSet)
-// 			err := flagSet.Parse(os.Args[2:])
-// 			if err != nil {
-// 				fmt.Println(err)
-// 			}
-// 			command.Run()
-// 		}
-// 	}
-
-// 	if argumentsCounter == 0 {
-// 		if commandBuilder.Command != "help" {
-// 			fmt.Printf("%s: is not a valid command\n", commandBuilder.Command)
-// 		}
-// 		InitCommandText(commands)
-// 		return
-// 	}
-// }
-
-// // InitCommandText returns a help text for the user at the
-// // command line.
-// func InitCommandText(commands []Command) {
-// 	fmt.Println("Bellt")
-// 	fmt.Println("Please use any of the listed commands:")
-// 	tabWriter := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-// 	for _, command := range commands {
-// 		fmt.Fprintf(tabWriter, "\t- %s\t%s\n", command.Name(), command.Help())
-// 	}
-// 	tabWriter.Flush()
-// 	fmt.Println(``)
-
-// 	for _, command := range commands {
-// 		fmt.Fprintf(tabWriter, "\t%s\n", command.Example())
-// 	}
-
-// }
+	for _, command := range commands {
+		fmt.Fprintf(tabWriter, "\t%s\n", command.Example())
+	}
+}
