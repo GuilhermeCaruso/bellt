@@ -27,7 +27,7 @@ const helpLongTextGenerate = `
 		0: all
 		1: routesOnly
 		2: middlewaresOnly
-		3: staticFilesOnly
+		3: staticFilesOnly 
 
 	- documentationYamlFile: string
 
