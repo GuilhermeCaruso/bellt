@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/GuilhermeCaruso/bellt/cli/commands"
+	"github.com/GuilhermeCaruso/bellt/bellt/commands"
 )
 
 var emptyCommandList = []Command{}
