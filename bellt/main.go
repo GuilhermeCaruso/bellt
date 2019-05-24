@@ -3,8 +3,8 @@ package main
 import (
 	"os"
 
-	"github.com/GuilhermeCaruso/bellt/cli/commands"
-	"github.com/GuilhermeCaruso/bellt/cli/pkg"
+	"github.com/GuilhermeCaruso/bellt/bellt/commands"
+	"github.com/GuilhermeCaruso/bellt/bellt/pkg"
 )
 
 var testCommandList = []pkg.Command{
