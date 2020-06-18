@@ -107,7 +107,7 @@ func TestArgumentFilter(t *testing.T) {
 		return
 	}
 
-	if command.Arguments[0] != command.Arguments[0] {
+	if want.Arguments[0] != command.Arguments[0] {
 		t.Errorf("Arguments configuration error: want %s, got %s", want.Arguments[0], command.Arguments[0])
 		return
 	}
