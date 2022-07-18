@@ -11,7 +11,7 @@ Bellt Package implements a request router with the aim of managing controller ac
 
 The project so far has the following functionalities:
 
-* Standard definition of route "/ health", in order to prepare the service developed with bellt to act as microservice.
+* Standard definition of route "/health", in order to prepare the service developed with bellt to act as microservice.
 * Providing the creation of parameterized routes, simple or segmented (groups).
 * All requests can be made through fixed patterns, querystrings and parameters.
 * Obtaining the requisition parameters in the controller functions.
